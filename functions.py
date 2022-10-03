@@ -1,4 +1,5 @@
 import re
+import json
 
 def getPackSize(title):
     if re.search('\d+g', title, re.IGNORECASE):
@@ -37,6 +38,24 @@ def isLowPrice(text):
         return "Yes"
     else:
         return "No"
+    
+    
+def getCategories():
+    category = {}
+    with open('categories.txt') as file:
+        catDict = json.loads(file.read())
+        for d in catDict['Categories']:
+            group = d['UrlFriendlyName']
+            category[group] = {}
+            for j in d['Children']:
+                cat = j['UrlFriendlyName']
+                category[group][cat] = []
+                subCat = j['Children']
+                if len(subCat) > 0:
+                    for s in subCat:
+                        category[group][cat].append(s['UrlFriendlyName'])
+            
+    return category
     
 
 
