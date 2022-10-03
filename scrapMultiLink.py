@@ -187,7 +187,6 @@ def extractData(group, category, subCategory):
     # Look for pagination Links
     try:
         numOfPages = int(WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "page-count"))).text.strip())
-        numOfPages = 1 # need to remove
     except:
         numOfPages = 1
         
@@ -226,17 +225,11 @@ def extractData(group, category, subCategory):
 def main():
     
     dataArray = []
+    catDict = getCategories()
     
-    # catDict = getCategories()
-    
-    catDict = {
-        "bakery":{
-            "christmas-bakery":["christmas-bakery"]
-        }
-    }
+  
     
     with open('link.txt') as file:
-        #firstLine = file.readline().split('/')
         lines = file.read().splitlines() 
         
     
