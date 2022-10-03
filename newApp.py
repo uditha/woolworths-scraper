@@ -53,10 +53,16 @@ def processTile(tile,group, category, subCategory):
         price = 'N/A' 
         newProduct = 'N/A'
         sponsored = 'N/A'
-        onSpecial = "N/A"
-        onHalfPrice = "N/A"
-        priceDropped = "N/A"
-        lowPrice = "N/A"
+        onSpecial = 'N/A'
+        onHalfPrice = 'N/A'
+        priceDropped = 'N/A'
+        lowPrice = 'N/A'
+        
+        #newCols
+        wasPrice = 'N/A'
+        imgURL = 'N/A'
+        gram = 'N/A'
+        gramPrice = 'N/A'
             
         if status == 1:
             # find price
@@ -73,7 +79,6 @@ def processTile(tile,group, category, subCategory):
                 newProduct = "No"
             
             # 'Sponsored Ad'
-            
             try:
                 tile.find_element(By.CLASS_NAME,'shelfProductTile-sponsored')
                 sponsored = "Yes"
@@ -101,8 +106,26 @@ def processTile(tile,group, category, subCategory):
             priceDropped = isPricesDropped(priceType)
             lowPrice = isLowPrice(priceType)
             
-        
-        
+            # wasPrice
+            try:
+                wasPriceText = tile.find_element(By.CLASS_NAME, 'shelfProductTagCenter').text
+                wasPrice = wasPriceText if 'was' in wasPriceText else 'N/A'
+                    
+            except:
+                wasPrice = 'N/A'
+            
+            
+            #image
+            
+            imgURL = tile.find_element(By.CLASS_NAME, 'shelfProductTile-image').get_attribute('src')
+            
+            # gram and gram price
+            
+            gramPriceArray = tile.find_element(By.CLASS_NAME, 'shelfProductTile-cupPrice').text.split('/')
+            gram = gramPriceArray[1]
+            gramPrice = gramPriceArray[0]
+            
+                
         item = {
             "ProductID": productId,
             "Scan Date": SCAN_DATE,
@@ -119,7 +142,11 @@ def processTile(tile,group, category, subCategory):
             "On Special": onSpecial,
             "On Half Price": onHalfPrice,
             "Prices Dropped": priceDropped,
-            "On Low Price": lowPrice  
+            "On Low Price": lowPrice,
+            "Was Price": wasPrice,
+            "Gram": gram,
+            "Gram Price": gramPrice,
+            "Image URL": imgURL
         }
         
         return item  
@@ -145,7 +172,7 @@ def extractData(group, category, subCategory):
     
     # Look for pagination Links
     try:
-        numOfPages = int(WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "page-count"))).text.strip())
+        numOfPages = int(WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "page-count"))).text.strip())
     except:
         numOfPages == 1
     
@@ -178,10 +205,7 @@ def extractData(group, category, subCategory):
      
 
 def main():
-    
-    # OLD_FILE = pd.read_csv("liquor/spirits/whisky.csv")
-    # print(getOldPrice(1085, OLD_FILE))
-    
+     
     with open('link.txt') as file:
         firstLine = file.readline().split('/')
     
@@ -196,19 +220,12 @@ def main():
     
     data = extractData(GROUP, CATEGORY, SUBCATEGORY)
     newFile = pd.DataFrame(data).sort_values('ProductID')
-   
-    
+
     if path.is_file():
         OLD_FILE = pd.read_csv(pathToFile)
-        # df3 = pd.concat([newFile, OLD_FILE]).drop_duplicates('ProductID').sort_values('ProductID')
-        # df3[SCAN_DATE] = df3['ProductID'].apply(lambda x : OLD_FILE[OLD_FILE['ProductID']== x]['Price'].iloc[0] if OLD_FILE[OLD_FILE['ProductID']== x] else 'New' )
-        # df3.to_csv(f'{GROUP}/{CATEGORY}/{SUBCATEGORY}2.csv', index=False)
-        
-
         newList = []
-
         oldProductList = list(OLD_FILE['ProductID'])
-
+        
         for i, row in newFile.iterrows():
             if row['ProductID'] in oldProductList:
                 item = OLD_FILE[OLD_FILE['ProductID']== row['ProductID'] ].squeeze().to_dict()
@@ -219,12 +236,8 @@ def main():
                 item[SCAN_DATE] = row["Price"]
                 newList.append(item)
                 
-        
         combinedFile = pd.DataFrame(newList)
-        combinedFile.to_csv(f'{GROUP}/{CATEGORY}/{SUBCATEGORY}2.csv', index=False)
-           
-        
-        
+        combinedFile.to_csv(f'{GROUP}/{CATEGORY}/{SUBCATEGORY}.csv', index=False)
     else:
         pathlib.Path(f'{GROUP}/{CATEGORY}').mkdir(parents=True, exist_ok=True) 
         newFile.to_csv(f'{GROUP}/{CATEGORY}/{SUBCATEGORY}.csv', index=False)
